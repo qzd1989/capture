@@ -2,7 +2,6 @@ use super::{FrameHandler, bgra_to_rgba};
 use crate::Config;
 use crate::Format;
 use crate::Frame;
-use crate::Monitor;
 use anyhow::{Result, anyhow};
 use core_media_rs::cm_sample_buffer::CMSampleBuffer;
 use display_info::DisplayInfo;
