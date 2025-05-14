@@ -5,6 +5,7 @@ use crate::Frame;
 use crate::Monitor;
 use anyhow::{Result, anyhow};
 use core_media_rs::cm_sample_buffer::CMSampleBuffer;
+use display_info::DisplayInfo;
 use screencapturekit::{
     output::LockTrait,
     shareable_content::SCShareableContent,
@@ -55,11 +56,20 @@ impl<T: FrameHandler> Engine<T> {
     pub fn start(&self) -> Result<()> {
         let (tx, rx) = channel();
         let display = {
+            let get_primary_display_id = || -> Result<u32> {
+                let display_infos = DisplayInfo::all().unwrap();
+                for display_info in display_infos {
+                    if display_info.is_primary {
+                        return Ok(display_info.id);
+                    }
+                }
+                Err(anyhow!("No primary display found"))
+            };
+            let primary_display_id = get_primary_display_id()?;
             let displays = SCShareableContent::get().unwrap().displays();
-            let display_id = Monitor::Primary.id().unwrap();
             let display = displays
                 .into_iter()
-                .find(move |x| x.display_id() == display_id)
+                .find(move |x| x.display_id() == primary_display_id)
                 .unwrap();
             display
         };
