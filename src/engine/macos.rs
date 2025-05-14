@@ -44,13 +44,13 @@ pub struct Engine<T: FrameHandler> {
     status: Arc<AtomicBool>,
 }
 impl<T: FrameHandler> Engine<T> {
-    pub fn new(config: Config, on_frame_arrived: T) -> Self {
-        Engine {
+    pub fn new(config: Config, on_frame_arrived: T) -> Arc<Self> {
+        Arc::new(Self {
             config,
             on_frame_arrived,
             fps: Arc::new(AtomicU32::new(0)),
             status: Arc::new(AtomicBool::new(true)),
-        }
+        })
     }
     pub fn start(&self) -> Result<()> {
         let (tx, rx) = channel();
