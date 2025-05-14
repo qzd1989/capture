@@ -104,6 +104,10 @@ impl<T: FrameHandler> Engine<T> {
                                 self.fps.store(*fps, Ordering::Relaxed);
                             }
                         }
+                        if fps_map.len() > 3 {
+                            let min_key = *fps_map.keys().min().unwrap();
+                            fps_map.remove(&min_key);
+                        }
                     }
                     let guard = buffer.lock().unwrap();
                     let mut frame = Frame::new(
