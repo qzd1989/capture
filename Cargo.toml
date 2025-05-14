@@ -7,6 +7,8 @@ edition = "2024"
 image = "0.25.6"
 display-info = "0.5.4"
 anyhow = "1.0.98"
+xcap = "0.5.2"
+fast_image_resize = "5.1.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-capture = { git = "https://github.com/qzd1989/windows-capture.git" }

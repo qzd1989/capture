@@ -3,11 +3,11 @@ use std::{
     sync::Arc,
     thread::{self, JoinHandle},
 };
-pub struct Controller<T: FrameHandler> {
+pub struct Recorder<T: FrameHandler> {
     engine: Arc<Engine<T>>,
     handle: Option<JoinHandle<()>>,
 }
-impl<T: FrameHandler> Controller<T> {
+impl<T: FrameHandler> Recorder<T> {
     pub fn new(config: Config, callback: T) -> Self {
         let engine = Engine::new(config, callback);
         Self {

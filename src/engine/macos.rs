@@ -2,6 +2,7 @@ use super::FrameHandler;
 use crate::Config;
 use crate::Format;
 use crate::Frame;
+use crate::utils::bgra_to_rgba;
 use anyhow::{Result, anyhow};
 use core_media_rs::cm_sample_buffer::CMSampleBuffer;
 use display_info::DisplayInfo;
@@ -123,12 +124,11 @@ impl<T: FrameHandler> Engine<T> {
                         display.width(),
                         display.height(),
                         guard.as_slice().to_vec(),
-                        Format::BGRA,
+                        self.config.format,
                     );
                     match self.config.format {
                         Format::RGBA => {
-                            let frame_buffer = frame.buffer.clone();
-                            bgra_to_rgba(&frame_buffer, &mut frame.buffer);
+                            bgra_to_rgba(&mut frame.buffer);
                         }
                         _ => {}
                     }
@@ -142,23 +142,23 @@ impl<T: FrameHandler> Engine<T> {
         self.status.store(false, Ordering::Relaxed);
     }
 }
-fn bgra_to_rgba(bgra_data: &[u8], rgba_data: &mut Vec<u8>) {
-    let len = bgra_data.len();
-    assert!(len % 4 == 0);
-    if rgba_data.capacity() < len {
-        rgba_data.reserve_exact(len - rgba_data.capacity());
-    }
-    unsafe {
-        rgba_data.set_len(len);
-        let src = bgra_data.as_ptr();
-        let dst = rgba_data.as_mut_ptr();
-        let mut i = 0;
-        while i < len {
-            *dst.add(i) = *src.add(i + 2); // R
-            *dst.add(i + 1) = *src.add(i + 1); // G
-            *dst.add(i + 2) = *src.add(i); // B
-            *dst.add(i + 3) = *src.add(i + 3); // A
-            i += 4;
-        }
-    }
-}
+// fn bgra_to_rgba(bgra_data: &[u8], rgba_data: &mut Vec<u8>) {
+//     let len = bgra_data.len();
+//     assert!(len % 4 == 0);
+//     if rgba_data.capacity() < len {
+//         rgba_data.reserve_exact(len - rgba_data.capacity());
+//     }
+//     unsafe {
+//         rgba_data.set_len(len);
+//         let src = bgra_data.as_ptr();
+//         let dst = rgba_data.as_mut_ptr();
+//         let mut i = 0;
+//         while i < len {
+//             *dst.add(i) = *src.add(i + 2); // R
+//             *dst.add(i + 1) = *src.add(i + 1); // G
+//             *dst.add(i + 2) = *src.add(i); // B
+//             *dst.add(i + 3) = *src.add(i + 3); // A
+//             i += 4;
+//         }
+//     }
+// }
