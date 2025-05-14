@@ -7,6 +7,6 @@ fn main() {
         println!("Frame: {}x{}, fps: {}", frame.width, frame.height, fps);
     });
     controller.start();
-    std::thread::sleep(Duration::from_secs(5));
+    std::thread::sleep(Duration::from_secs(500));
     controller.stop();
 }

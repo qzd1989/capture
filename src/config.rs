@@ -1,5 +1,6 @@
 use crate::Format;
 
+#[derive(Clone, Copy)]
 pub struct Config {
     pub format: Format,
 }

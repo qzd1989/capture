@@ -9,7 +9,7 @@ pub struct Controller<T: FrameHandler> {
 }
 impl<T: FrameHandler> Controller<T> {
     pub fn new(config: Config, callback: T) -> Self {
-        let engine = Arc::new(Engine::new(config, callback));
+        let engine = Engine::new(config, callback);
         Self {
             engine,
             handle: None,
