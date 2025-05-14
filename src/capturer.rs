@@ -3,6 +3,7 @@ use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
 pub struct Capturer {}
 impl Capturer {
+    /// 临时使用xcap,截图太慢了
     pub fn screenshot(config: Config) -> Result<Frame> {
         let Some(primary_monitor) = xcap::Monitor::all()
             .map_err(|error| anyhow!(error))?
