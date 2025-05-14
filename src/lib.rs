@@ -8,7 +8,6 @@ mod utils;
 
 use engine::*;
 use frame::*;
-use utils::*;
 
 pub use capturer::*;
 pub use config::*;
