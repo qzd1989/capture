@@ -142,7 +142,6 @@ impl<T: FrameHandler> Engine<T> {
         self.status.store(false, Ordering::Relaxed);
     }
 }
-
 fn bgra_to_rgba(bgra_data: &[u8], rgba_data: &mut Vec<u8>) {
     let len = bgra_data.len();
     assert!(len % 4 == 0);
