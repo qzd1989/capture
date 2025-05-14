@@ -46,21 +46,20 @@ impl<T: FrameHandler> GraphicsCaptureApiHandler for Capture<T> {
         {
             let elapsed = self.now.elapsed();
             let key = elapsed.as_secs();
-            if self.fps_map.contains_key(&key) {
-                let value = self.fps_map.get_mut(&key).unwrap();
-                *value += 1;
-            } else {
-                self.fps_map.insert(key, 1);
-            }
+            *self.fps_map.entry(key).or_insert(0) += 1;
             if key >= 1 {
                 let prev_key = key - 1;
                 if let Some(fps) = self.fps_map.get(&prev_key) {
                     self.engine.fps.store(*fps, Ordering::Relaxed);
                 }
             }
+            if self.fps_map.len() > 3 {
+                let min_key = *self.fps_map.keys().min().unwrap();
+                self.fps_map.remove(&min_key);
+            }
         }
-        let mut data = frame.buffer().unwrap();
-        let buffer = data.as_nopadding_buffer().unwrap().to_vec();
+        let mut data = frame.buffer()?;
+        let buffer = data.as_nopadding_buffer()?.to_vec();
         let (width, height) = (data.width(), data.height());
         let frame = Frame::new(width, height, buffer, self.engine.config.format);
         (self.engine.on_frame_arrived)(frame, self.engine.fps.load(Ordering::Relaxed));
