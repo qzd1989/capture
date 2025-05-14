@@ -84,7 +84,7 @@ impl<T: FrameHandler> Engine<T> {
     pub fn start(self: &Arc<Self>) -> Result<()> {
         let item = Monitor::primary().map_err(|error| anyhow!(error))?;
         let cursor_capture = CursorCaptureSettings::WithoutCursor;
-        let draw_border = DrawBorderSettings::WithoutBorder;
+        let draw_border = DrawBorderSettings::Default;
         let color_format = {
             match self.config.format {
                 crate::Format::BGRA => ColorFormat::Bgra8,
