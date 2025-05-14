@@ -1,5 +1,4 @@
 use crate::Format;
-
 pub struct Frame {
     pub width: u32,
     pub height: u32,
