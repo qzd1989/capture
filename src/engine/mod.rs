@@ -13,7 +13,7 @@ pub use engine::*;
 
 pub trait FrameHandler: Fn(Frame, u32) + Send + Sync + 'static {}
 impl<T> FrameHandler for T where T: Fn(Frame, u32) + Send + Sync + 'static {}
-
+#[allow(dead_code)]
 pub fn bgra_to_rgba(bgra_data: &[u8], rgba_data: &mut Vec<u8>) {
     let len = bgra_data.len();
     assert!(len % 4 == 0);
