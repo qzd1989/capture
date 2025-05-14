@@ -9,7 +9,7 @@ display-info = "0.5.4"
 anyhow = "1.0.98"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-capture = { git = "https://github.com/qzd1989/windows-capture.git" }
+windows-capture = { git = "https://github.com/qzd1989/windows-capture.git", tag = "v1.0.0" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 screencapturekit = "0.3.5"
