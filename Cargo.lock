@@ -1822,7 +1822,7 @@ dependencies = [
 [[package]]
 name = "windows-capture"
 version = "1.4.3"
-source = "git+https://github.com/qzd1989/windows-capture.git#2e52559823b21a7eb9424627358792a488ddfae6"
+source = "git+https://github.com/qzd1989/windows-capture.git?tag=v1.0.0#d547387e762dfff7eed2ae84bf38b7cdbdb5bfe2"
 dependencies = [
  "clap",
  "ctrlc",
