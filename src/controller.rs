@@ -1,6 +1,7 @@
 use crate::{Config, Engine, FrameHandler, frame::Frame, utils::rgba_to_bgra};
 use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     sync::Arc,
     thread::{self, JoinHandle},
@@ -8,6 +9,7 @@ use std::{
 pub struct Controller {
     engine: Arc<Engine>,
     handle: Option<JoinHandle<()>>,
+    is_running: Arc<AtomicBool>,
 }
 impl Controller {
     pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Self {
@@ -15,11 +17,14 @@ impl Controller {
         Self {
             engine,
             handle: None,
+            is_running: Arc::new(AtomicBool::new(false)),
         }
     }
     pub fn start(&mut self) {
         let engine = Arc::clone(&self.engine);
+        let is_running = Arc::clone(&self.is_running);
         let handle = thread::spawn(move || {
+            is_running.store(true, Ordering::Relaxed);
             engine.start().unwrap();
         });
         self.handle = Some(handle);
@@ -27,8 +32,12 @@ impl Controller {
     pub fn stop(&mut self) {
         self.engine.stop();
         if let Some(handle) = self.handle.take() {
-            let _ = handle.join(); // 可以选择不阻塞
+            let _ = handle.join();
         }
+        self.is_running.store(false, Ordering::Relaxed);
+    }
+    pub fn is_running(&self) -> bool {
+        self.is_running.load(Ordering::Relaxed)
     }
     pub fn grab(config: Config) -> Result<Frame> {
         let Some(primary_monitor) = xcap::Monitor::all()
