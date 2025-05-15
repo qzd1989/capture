@@ -78,7 +78,7 @@ impl Engine {
             config,
             on_frame_arrived,
             fps: Arc::new(AtomicU32::new(0)),
-            status: Arc::new(AtomicBool::new(true)),
+            status: Arc::new(AtomicBool::new(false)),
         })
     }
     pub fn start(self: &Arc<Self>) -> Result<()> {

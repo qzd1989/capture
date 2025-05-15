@@ -42,7 +42,7 @@ pub struct Engine {
     pub config: Config,
     pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
-    status: Arc<AtomicBool>,
+    pub status: Arc<AtomicBool>,
 }
 impl Engine {
     pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
@@ -50,7 +50,7 @@ impl Engine {
             config,
             on_frame_arrived,
             fps: Arc::new(AtomicU32::new(0)),
-            status: Arc::new(AtomicBool::new(true)),
+            status: Arc::new(AtomicBool::new(false)),
         })
     }
     pub fn start(&self) -> Result<()> {
@@ -87,10 +87,11 @@ impl Engine {
         let filter = SCContentFilter::new().with_display_excluding_windows(&display, &[]);
         let mut stream = SCStream::new(&filter, &config);
         stream.add_output_handler(StreamOutput { sender: tx }, SCStreamOutputType::Screen);
-        stream
-            .start_capture()
-            .map_err(|error| anyhow!(error.to_string()))?;
         self.status.store(true, Ordering::Relaxed);
+        if let Err(error) = stream.start_capture() {
+            self.status.store(false, Ordering::Relaxed);
+            return Err(anyhow!(error.to_string()));
+        }
         let mut fps_map: HashMap<u64, u32> = HashMap::new();
         let now = Instant::now();
         loop {
@@ -143,23 +144,3 @@ impl Engine {
         self.status.store(false, Ordering::Relaxed);
     }
 }
-// fn bgra_to_rgba(bgra_data: &[u8], rgba_data: &mut Vec<u8>) {
-//     let len = bgra_data.len();
-//     assert!(len % 4 == 0);
-//     if rgba_data.capacity() < len {
-//         rgba_data.reserve_exact(len - rgba_data.capacity());
-//     }
-//     unsafe {
-//         rgba_data.set_len(len);
-//         let src = bgra_data.as_ptr();
-//         let dst = rgba_data.as_mut_ptr();
-//         let mut i = 0;
-//         while i < len {
-//             *dst.add(i) = *src.add(i + 2); // R
-//             *dst.add(i + 1) = *src.add(i + 1); // G
-//             *dst.add(i + 2) = *src.add(i); // B
-//             *dst.add(i + 3) = *src.add(i + 3); // A
-//             i += 4;
-//         }
-//     }
-// }
