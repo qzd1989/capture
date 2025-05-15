@@ -5,6 +5,7 @@ mod format;
 mod frame;
 mod utils;
 
+#[cfg(debug_assertions)]
 pub use engine::*;
 
 pub use config::*;
