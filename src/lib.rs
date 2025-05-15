@@ -5,7 +5,7 @@ mod format;
 mod frame;
 mod utils;
 
-use engine::*;
+pub use engine::*;
 
 pub use config::*;
 pub use controller::*;

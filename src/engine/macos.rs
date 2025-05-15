@@ -90,6 +90,7 @@ impl Engine {
         stream
             .start_capture()
             .map_err(|error| anyhow!(error.to_string()))?;
+        self.status.store(true, Ordering::Relaxed);
         let mut fps_map: HashMap<u64, u32> = HashMap::new();
         let now = Instant::now();
         loop {

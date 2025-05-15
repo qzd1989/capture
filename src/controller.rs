@@ -21,6 +21,9 @@ impl Controller {
         }
     }
     pub fn start(&mut self) {
+        if self.is_running() {
+            self.stop();
+        }
         let engine = Arc::clone(&self.engine);
         let is_running = Arc::clone(&self.is_running);
         let handle = thread::spawn(move || {

@@ -93,7 +93,9 @@ impl Engine {
         };
         let flags = Arc::clone(self);
         let settings = Settings::new(item, cursor_capture, draw_border, color_format, flags);
+        self.status.store(true, Ordering::Relaxed);
         if let Err(error) = Capture::start(settings) {
+            self.status.store(false, Ordering::Relaxed);
             return Err(anyhow!(error));
         }
         Ok(())
