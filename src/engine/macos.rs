@@ -38,14 +38,14 @@ impl SCStreamOutputTrait for StreamOutput {
             .expect("could not send to output_buffer");
     }
 }
-pub struct Engine<T: FrameHandler> {
+pub struct Engine {
     pub config: Config,
-    pub on_frame_arrived: T,
+    pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
     status: Arc<AtomicBool>,
 }
-impl<T: FrameHandler> Engine<T> {
-    pub fn new(config: Config, on_frame_arrived: T) -> Arc<Self> {
+impl Engine {
+    pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
         Arc::new(Self {
             config,
             on_frame_arrived,

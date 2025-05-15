@@ -1,15 +1,13 @@
-mod capturer;
 mod config;
+mod controller;
 mod engine;
 mod format;
 mod frame;
-mod recorder;
 mod utils;
 
 use engine::*;
-use frame::*;
 
-pub use capturer::*;
 pub use config::*;
+pub use controller::*;
 pub use format::*;
-pub use recorder::*;
+pub use frame::*;

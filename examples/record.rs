@@ -1,10 +1,10 @@
-use capture::{Config, Format, Recorder};
+use capture::{Config, Controller, Format, Frame};
 use std::time::Duration;
 fn main() {
     let config = Config::new(Format::BGRA);
-    let mut recorder = Recorder::new(config, |frame, fps| {
+    let on_frame_arrived = Box::new(|frame: Frame, fps| {
         println!(
-            "Frame: {}x{}, fps: {}, data: {}, format: {:?}",
+            "Frame: {}x{}, fps: {}, buffer len: {}, format: {:?}",
             frame.width,
             frame.height,
             fps,
@@ -12,7 +12,8 @@ fn main() {
             frame.format
         );
     });
-    recorder.start();
+    let mut controller = Controller::new(config, on_frame_arrived);
+    controller.start();
     std::thread::sleep(Duration::from_secs(500));
-    recorder.stop();
+    controller.stop();
 }

@@ -1,10 +1,36 @@
-use crate::{Config, frame::Frame, utils::rgba_to_bgra};
+use crate::{Config, Engine, FrameHandler, frame::Frame, utils::rgba_to_bgra};
 use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
-pub struct Capturer {}
-impl Capturer {
-    /// 临时使用xcap,截图太慢了
-    pub fn screenshot(config: Config) -> Result<Frame> {
+use std::{
+    sync::Arc,
+    thread::{self, JoinHandle},
+};
+pub struct Controller {
+    engine: Arc<Engine>,
+    handle: Option<JoinHandle<()>>,
+}
+impl Controller {
+    pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Self {
+        let engine = Engine::new(config, on_frame_arrived);
+        Self {
+            engine,
+            handle: None,
+        }
+    }
+    pub fn start(&mut self) {
+        let engine = Arc::clone(&self.engine);
+        let handle = thread::spawn(move || {
+            engine.start().unwrap();
+        });
+        self.handle = Some(handle);
+    }
+    pub fn stop(&mut self) {
+        self.engine.stop();
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join(); // 可以选择不阻塞
+        }
+    }
+    pub fn grab(config: Config) -> Result<Frame> {
         let Some(primary_monitor) = xcap::Monitor::all()
             .map_err(|error| anyhow!(error))?
             .into_iter()

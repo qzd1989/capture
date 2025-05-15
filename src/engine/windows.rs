@@ -16,13 +16,13 @@ use windows_capture::{
     monitor::Monitor,
     settings::{ColorFormat, CursorCaptureSettings, DrawBorderSettings, Settings},
 };
-struct Capture<T: FrameHandler> {
-    engine: Arc<Engine<T>>,
+struct Capture {
+    engine: Arc<Engine>,
     fps_map: HashMap<u64, u32>,
     now: Instant,
 }
-impl<T: FrameHandler> GraphicsCaptureApiHandler for Capture<T> {
-    type Flags = Arc<Engine<T>>;
+impl GraphicsCaptureApiHandler for Capture {
+    type Flags = Arc<Engine>;
     type Error = Box<dyn std::error::Error + Send + Sync>;
     fn new(ctx: Context<Self::Flags>) -> std::result::Result<Self, Self::Error> {
         let engine = ctx.flags;
@@ -66,14 +66,14 @@ impl<T: FrameHandler> GraphicsCaptureApiHandler for Capture<T> {
         Ok(())
     }
 }
-pub struct Engine<T: FrameHandler> {
+pub struct Engine {
     pub config: Config,
-    pub on_frame_arrived: T,
+    pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
     status: Arc<AtomicBool>,
 }
-impl<T: FrameHandler> Engine<T> {
-    pub fn new(config: Config, on_frame_arrived: T) -> Arc<Self> {
+impl Engine {
+    pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
         Arc::new(Engine {
             config,
             on_frame_arrived,
