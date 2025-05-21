@@ -1,4 +1,9 @@
-use crate::{Config, Engine, FrameHandler, frame::Frame, utils::rgba_to_bgra};
+use crate::{
+    Config,
+    engine::{Engine, FrameHandler},
+    frame::Frame,
+    utils::rgba_to_bgra,
+};
 use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
 use std::sync::atomic::Ordering;
