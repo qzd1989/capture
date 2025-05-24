@@ -40,7 +40,7 @@ impl Controller {
         }
     }
     pub fn is_running(&self) -> bool {
-        self.engine.status.load(Ordering::Relaxed)
+        self.engine.status.load(Ordering::SeqCst)
     }
     pub fn grab(config: Config) -> Result<Frame> {
         let Some(primary_monitor) = xcap::Monitor::all()

@@ -39,7 +39,7 @@ impl GraphicsCaptureApiHandler for Capture {
         frame: &mut WindowsCaptureFrame,
         capture_control: InternalCaptureControl,
     ) -> std::result::Result<(), Self::Error> {
-        if self.engine.status.load(Ordering::Relaxed) == false {
+        if self.engine.status.load(Ordering::SeqCst) == false {
             capture_control.stop();
             return Ok(());
         }
@@ -50,7 +50,7 @@ impl GraphicsCaptureApiHandler for Capture {
             if key >= 1 {
                 let prev_key = key - 1;
                 if let Some(fps) = self.fps_map.get(&prev_key) {
-                    self.engine.fps.store(*fps, Ordering::Relaxed);
+                    self.engine.fps.store(*fps, Ordering::SeqCst);
                 }
             }
             if self.fps_map.len() > 3 {
@@ -62,7 +62,7 @@ impl GraphicsCaptureApiHandler for Capture {
         let buffer = data.as_nopadding_buffer()?.to_vec();
         let (width, height) = (data.width(), data.height());
         let frame = Frame::new(width, height, buffer, self.engine.config.format);
-        (self.engine.on_frame_arrived)(frame, self.engine.fps.load(Ordering::Relaxed));
+        (self.engine.on_frame_arrived)(frame, self.engine.fps.load(Ordering::SeqCst));
         Ok(())
     }
 }
@@ -93,14 +93,14 @@ impl Engine {
         };
         let flags = Arc::clone(self);
         let settings = Settings::new(item, cursor_capture, draw_border, color_format, flags);
-        self.status.store(true, Ordering::Relaxed);
+        self.status.store(true, Ordering::SeqCst);
         if let Err(error) = Capture::start(settings) {
-            self.status.store(false, Ordering::Relaxed);
+            self.status.store(false, Ordering::SeqCst);
             return Err(anyhow!(error));
         }
         Ok(())
     }
     pub fn stop(&self) {
-        self.status.store(false, Ordering::Relaxed);
+        self.status.store(false, Ordering::SeqCst);
     }
 }

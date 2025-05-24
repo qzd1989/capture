@@ -87,16 +87,16 @@ impl Engine {
         let filter = SCContentFilter::new().with_display_excluding_windows(&display, &[]);
         let mut stream = SCStream::new(&filter, &config);
         stream.add_output_handler(StreamOutput { sender: tx }, SCStreamOutputType::Screen);
-        self.status.store(true, Ordering::Relaxed);
+        self.status.store(true, Ordering::SeqCst);
         if let Err(error) = stream.start_capture() {
-            self.status.store(false, Ordering::Relaxed);
+            self.status.store(false, Ordering::SeqCst);
             return Err(anyhow!(error.to_string()));
         }
         let mut fps_map: HashMap<u64, u32> = HashMap::new();
         let now = Instant::now();
         loop {
             let elapsed = now.elapsed();
-            if !self.status.load(Ordering::Relaxed) {
+            if !self.status.load(Ordering::SeqCst) {
                 stream.stop_capture().ok();
                 break;
             }
@@ -113,7 +113,7 @@ impl Engine {
                         if key >= 1 {
                             let prev_key = key - 1;
                             if let Some(fps) = fps_map.get(&prev_key) {
-                                self.fps.store(*fps, Ordering::Relaxed);
+                                self.fps.store(*fps, Ordering::SeqCst);
                             }
                         }
                         if fps_map.len() > 3 {
@@ -134,13 +134,13 @@ impl Engine {
                         }
                         _ => {}
                     }
-                    (self.on_frame_arrived)(frame, self.fps.load(Ordering::Relaxed));
+                    (self.on_frame_arrived)(frame, self.fps.load(Ordering::SeqCst));
                 }
             }
         }
         Ok(())
     }
     pub fn stop(&self) {
-        self.status.store(false, Ordering::Relaxed);
+        self.status.store(false, Ordering::SeqCst);
     }
 }
