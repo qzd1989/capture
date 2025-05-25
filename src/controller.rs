@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::Ordering;
 use std::{
     sync::Arc,
     thread::{self, JoinHandle},
