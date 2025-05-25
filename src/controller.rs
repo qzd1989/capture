@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use fast_image_resize::{PixelType, Resizer, images::Image};
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     sync::Arc,
     thread::{self, JoinHandle},
@@ -40,7 +40,7 @@ impl Controller {
         }
     }
     pub fn is_running(&self) -> bool {
-        self.engine.status.load(Ordering::SeqCst)
+        self.engine.running.load(Ordering::SeqCst)
     }
     pub fn grab(config: Config) -> Result<Frame> {
         let Some(primary_monitor) = xcap::Monitor::all()

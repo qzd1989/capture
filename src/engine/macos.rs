@@ -42,7 +42,7 @@ pub struct Engine {
     pub config: Config,
     pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
-    pub status: Arc<AtomicBool>,
+    pub running: Arc<AtomicBool>,
 }
 impl Engine {
     pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
@@ -50,7 +50,7 @@ impl Engine {
             config,
             on_frame_arrived,
             fps: Arc::new(AtomicU32::new(0)),
-            status: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(false)),
         })
     }
     pub fn start(&self) -> Result<()> {
@@ -87,16 +87,16 @@ impl Engine {
         let filter = SCContentFilter::new().with_display_excluding_windows(&display, &[]);
         let mut stream = SCStream::new(&filter, &config);
         stream.add_output_handler(StreamOutput { sender: tx }, SCStreamOutputType::Screen);
-        self.status.store(true, Ordering::SeqCst);
+        self.running.store(true, Ordering::SeqCst);
         if let Err(error) = stream.start_capture() {
-            self.status.store(false, Ordering::SeqCst);
+            self.running.store(false, Ordering::SeqCst);
             return Err(anyhow!(error.to_string()));
         }
         let mut fps_map: HashMap<u64, u32> = HashMap::new();
         let now = Instant::now();
         loop {
             let elapsed = now.elapsed();
-            if !self.status.load(Ordering::SeqCst) {
+            if !self.running.load(Ordering::SeqCst) {
                 stream.stop_capture().ok();
                 break;
             }
@@ -141,6 +141,6 @@ impl Engine {
         Ok(())
     }
     pub fn stop(&self) {
-        self.status.store(false, Ordering::SeqCst);
+        self.running.store(false, Ordering::SeqCst);
     }
 }

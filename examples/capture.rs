@@ -22,10 +22,10 @@ fn main() {
     spawn(move || {
         let _ = engine_clone.start();
     });
-    sleep(Duration::from_secs(1));
+    sleep(Duration::from_secs(5));
     println!("Stopping capture...");
     engine.stop();
-    sleep(Duration::from_secs(2));
+    sleep(Duration::from_secs(5));
     println!("Starting capture again...");
     if let Err(error) = engine.start() {
         println!("Error starting capture: {}", error);

@@ -23,7 +23,7 @@ struct Capture {
 }
 impl GraphicsCaptureApiHandler for Capture {
     type Flags = Arc<Engine>;
-    type Error = Box<dyn std::error::Error + Send + Sync>;
+    type Error = anyhow::Error;
     fn new(ctx: Context<Self::Flags>) -> std::result::Result<Self, Self::Error> {
         let engine = ctx.flags;
         let fps_map = HashMap::new();
@@ -34,30 +34,32 @@ impl GraphicsCaptureApiHandler for Capture {
             now,
         })
     }
+
+    fn update_fps(&mut self) {
+        let elapsed_secs = self.now.elapsed().as_secs();
+        *self.fps_map.entry(elapsed_secs).or_insert(0) += 1;
+        if elapsed_secs >= 1 {
+            if let Some(&fps) = self.fps_map.get(&(elapsed_secs - 1)) {
+                self.engine.fps.store(fps, Ordering::SeqCst);
+            }
+        }
+        if self.fps_map.len() > 3 {
+            if let Some(&min_key) = self.fps_map.keys().min() {
+                self.fps_map.remove(&min_key);
+            }
+        }
+    }
+
     fn on_frame_arrived(
         &mut self,
         frame: &mut WindowsCaptureFrame,
         capture_control: InternalCaptureControl,
     ) -> std::result::Result<(), Self::Error> {
-        if self.engine.status.load(Ordering::SeqCst) == false {
+        if !self.engine.running.load(Ordering::SeqCst) {
             capture_control.stop();
             return Ok(());
         }
-        {
-            let elapsed = self.now.elapsed();
-            let key = elapsed.as_secs();
-            *self.fps_map.entry(key).or_insert(0) += 1;
-            if key >= 1 {
-                let prev_key = key - 1;
-                if let Some(fps) = self.fps_map.get(&prev_key) {
-                    self.engine.fps.store(*fps, Ordering::SeqCst);
-                }
-            }
-            if self.fps_map.len() > 3 {
-                let min_key = *self.fps_map.keys().min().unwrap();
-                self.fps_map.remove(&min_key);
-            }
-        }
+        self.update_fps();
         let mut data = frame.buffer()?;
         let buffer = data.as_nopadding_buffer()?.to_vec();
         let (width, height) = (data.width(), data.height());
@@ -70,7 +72,7 @@ pub struct Engine {
     pub config: Config,
     pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
-    status: Arc<AtomicBool>,
+    running: Arc<AtomicBool>,
 }
 impl Engine {
     pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
@@ -78,29 +80,27 @@ impl Engine {
             config,
             on_frame_arrived,
             fps: Arc::new(AtomicU32::new(0)),
-            status: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(false)),
         })
     }
     pub fn start(self: &Arc<Self>) -> Result<()> {
         let item = Monitor::primary().map_err(|error| anyhow!(error))?;
         let cursor_capture = CursorCaptureSettings::WithoutCursor;
         let draw_border = DrawBorderSettings::Default;
-        let color_format = {
-            match self.config.format {
-                crate::Format::BGRA => ColorFormat::Bgra8,
-                crate::Format::RGBA => ColorFormat::Rgba8,
-            }
+        let color_format = match self.config.format {
+            crate::Format::BGRA => ColorFormat::Bgra8,
+            crate::Format::RGBA => ColorFormat::Rgba8,
         };
         let flags = Arc::clone(self);
         let settings = Settings::new(item, cursor_capture, draw_border, color_format, flags);
-        self.status.store(true, Ordering::SeqCst);
-        if let Err(error) = Capture::start(settings) {
-            self.status.store(false, Ordering::SeqCst);
-            return Err(anyhow!(error));
+        self.running.store(true, Ordering::SeqCst);
+        let result = Capture::start(settings);
+        if result.is_err() {
+            self.running.store(false, Ordering::SeqCst);
         }
-        Ok(())
+        result.map_err(|e| anyhow!(e))
     }
     pub fn stop(&self) {
-        self.status.store(false, Ordering::SeqCst);
+        self.running.store(false, Ordering::SeqCst);
     }
 }
