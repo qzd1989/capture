@@ -35,21 +35,6 @@ impl GraphicsCaptureApiHandler for Capture {
         })
     }
 
-    fn update_fps(&mut self) {
-        let elapsed_secs = self.now.elapsed().as_secs();
-        *self.fps_map.entry(elapsed_secs).or_insert(0) += 1;
-        if elapsed_secs >= 1 {
-            if let Some(&fps) = self.fps_map.get(&(elapsed_secs - 1)) {
-                self.engine.fps.store(fps, Ordering::SeqCst);
-            }
-        }
-        if self.fps_map.len() > 3 {
-            if let Some(&min_key) = self.fps_map.keys().min() {
-                self.fps_map.remove(&min_key);
-            }
-        }
-    }
-
     fn on_frame_arrived(
         &mut self,
         frame: &mut WindowsCaptureFrame,
@@ -59,7 +44,20 @@ impl GraphicsCaptureApiHandler for Capture {
             capture_control.stop();
             return Ok(());
         }
-        self.update_fps();
+        {
+            let elapsed_secs = self.now.elapsed().as_secs();
+            *self.fps_map.entry(elapsed_secs).or_insert(0) += 1;
+            if elapsed_secs >= 1 {
+                if let Some(&fps) = self.fps_map.get(&(elapsed_secs - 1)) {
+                    self.engine.fps.store(fps, Ordering::SeqCst);
+                }
+            }
+            if self.fps_map.len() > 3 {
+                if let Some(&min_key) = self.fps_map.keys().min() {
+                    self.fps_map.remove(&min_key);
+                }
+            }
+        }
         let mut data = frame.buffer()?;
         let buffer = data.as_nopadding_buffer()?.to_vec();
         let (width, height) = (data.width(), data.height());
@@ -72,7 +70,7 @@ pub struct Engine {
     pub config: Config,
     pub on_frame_arrived: Box<dyn FrameHandler>,
     pub fps: Arc<AtomicU32>,
-    running: Arc<AtomicBool>,
+    pub running: Arc<AtomicBool>,
 }
 impl Engine {
     pub fn new(config: Config, on_frame_arrived: Box<dyn FrameHandler>) -> Arc<Self> {
