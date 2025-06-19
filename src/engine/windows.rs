@@ -95,6 +95,10 @@ impl Engine {
         if self.is_running() {
             return Err(anyhow!("The capture engine is already running."));
         }
+        let _guard = RestoreIsRunning {
+            target: &self.is_running,
+            original: Arc::new(false),
+        };
         let item = Monitor::primary().map_err(|error| anyhow!(error))?;
         let cursor_capture = CursorCaptureSettings::WithoutCursor;
         let draw_border = DrawBorderSettings::Default;
@@ -106,9 +110,6 @@ impl Engine {
         let settings = Settings::new(item, cursor_capture, draw_border, color_format, flags);
         self.is_running.swap(Arc::new(true));
         let result = Capture::start(settings);
-        if result.is_err() {
-            self.is_running.swap(Arc::new(false));
-        }
         result.map_err(|e| anyhow!(e))
     }
 
@@ -161,6 +162,17 @@ impl Engine {
         let frame = rx.recv_timeout(Duration::from_millis(time_out_millis))?;
         self.stop();
         Ok(frame)
+    }
+}
+
+struct RestoreIsRunning<'a> {
+    target: &'a ArcSwap<bool>,
+    original: Arc<bool>,
+}
+
+impl Drop for RestoreHandler<'_> {
+    fn drop(&mut self) {
+        self.target.swap(self.original.clone());
     }
 }
 
