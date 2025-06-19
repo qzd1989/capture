@@ -109,8 +109,7 @@ impl Engine {
         let flags = Arc::clone(self);
         let settings = Settings::new(item, cursor_capture, draw_border, color_format, flags);
         self.is_running.swap(Arc::new(true));
-        let result = Capture::start(settings);
-        result.map_err(|e| anyhow!(e))
+        Capture::start(settings).map_err(|error| anyhow!(error))
     }
 
     pub fn start_background(self: &Arc<Self>) -> Result<()> {
@@ -170,7 +169,7 @@ struct RestoreIsRunning<'a> {
     original: Arc<bool>,
 }
 
-impl Drop for RestoreHandler<'_> {
+impl Drop for RestoreIsRunning<'_> {
     fn drop(&mut self) {
         self.target.swap(self.original.clone());
     }

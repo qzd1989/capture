@@ -17,10 +17,10 @@ fn main() {
     sleep(Duration::from_millis(3000));
     engine.stop();
     println!("finished");
-    // sleep(Duration::from_millis(3000));
-    // println!("start");
-    // engine.start_background().expect("Engine start failed.");
-    // sleep(Duration::from_millis(3000));
-    // engine.stop();
-    // println!("finished");
+    sleep(Duration::from_millis(3000));
+    println!("start");
+    engine.start_background().expect("Engine start failed.");
+    sleep(Duration::from_millis(3000));
+    engine.stop();
+    println!("finished");
 }
