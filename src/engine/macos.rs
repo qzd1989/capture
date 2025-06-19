@@ -5,6 +5,7 @@ use crate::Frame;
 use crate::utils::bgra_to_rgba;
 use anyhow::{Result, anyhow};
 use arc_swap::ArcSwap;
+use core_foundation::error::CFError;
 use core_media_rs::cm_sample_buffer::CMSampleBuffer;
 use display_info::DisplayInfo;
 use screencapturekit::{
@@ -29,6 +30,12 @@ struct StreamOutput {
     sender: Sender<CMSampleBuffer>,
 }
 
+impl StreamOutput {
+    pub fn new(sender: Sender<CMSampleBuffer>) -> Self {
+        Self { sender }
+    }
+}
+
 impl SCStreamOutputTrait for StreamOutput {
     fn did_output_sample_buffer(
         &self,
@@ -37,7 +44,7 @@ impl SCStreamOutputTrait for StreamOutput {
     ) {
         self.sender
             .send(sample_buffer)
-            .expect("could not send to output_buffer");
+            .expect("Could not send to output_buffer.");
     }
 }
 
@@ -62,6 +69,10 @@ impl Engine {
         if self.is_running() {
             return Err(anyhow!("The capture engine is already running."));
         }
+        let _guard = RestoreIsRunning {
+            target: &self.is_running,
+            original: Arc::new(false),
+        };
         let (tx, rx) = channel();
         let display = {
             let get_primary_display_id = || -> Result<u32> {
@@ -81,33 +92,33 @@ impl Engine {
                 .unwrap();
             display
         };
+
+        let err_callback = |error: CFError| anyhow!(error.to_string());
         let config = SCStreamConfiguration::new()
             .set_captures_audio(false)
-            .map_err(|error| anyhow!(error.to_string()))?
+            .map_err(err_callback)?
             .set_pixel_format(PixelFormat::BGRA)
-            .map_err(|error| anyhow!(error.to_string()))?
+            .map_err(err_callback)?
             .set_width(display.width())
-            .map_err(|error| anyhow!(error.to_string()))?
+            .map_err(err_callback)?
             .set_height(display.height())
-            .map_err(|error| anyhow!(error.to_string()))?
+            .map_err(err_callback)?
             .set_shows_cursor(false)
-            .map_err(|error| anyhow!(error.to_string()))?;
+            .map_err(err_callback)?;
         let filter = SCContentFilter::new().with_display_excluding_windows(&display, &[]);
         let mut stream = SCStream::new(&filter, &config);
-        stream.add_output_handler(StreamOutput { sender: tx }, SCStreamOutputType::Screen);
-        stream
-            .start_capture()
-            .map_err(|error| anyhow!(error.to_string()))?;
+        stream.add_output_handler(StreamOutput::new(tx), SCStreamOutputType::Screen);
+        stream.start_capture().map_err(err_callback)?;
+
         let mut fps_map: HashMap<u64, u32> = HashMap::new();
         let now = Instant::now();
+        self.is_running.swap(Arc::new(true));
         loop {
-            println!("hello1");
             let elapsed = now.elapsed();
             if !self.is_running.load().as_ref() {
                 self.stop();
                 return Ok(());
             }
-            println!("hello2");
             if let Ok(sample) = rx.try_recv() {
                 if let Ok(buffer) = sample.get_pixel_buffer() {
                     {
@@ -186,6 +197,17 @@ impl Engine {
         let frame = rx.recv_timeout(Duration::from_millis(time_out_millis))?;
         self.stop();
         Ok(frame)
+    }
+}
+
+struct RestoreIsRunning<'a> {
+    target: &'a ArcSwap<bool>,
+    original: Arc<bool>,
+}
+
+impl Drop for RestoreIsRunning<'_> {
+    fn drop(&mut self) {
+        self.target.swap(self.original.clone());
     }
 }
 
