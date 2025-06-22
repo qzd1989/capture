@@ -1,0 +1,19 @@
+[package]
+name = "capture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+arc-swap = "1.7.1"
+image = "0.25.6"
+display-info = "0.5.4"
+
+[target.'cfg(windows)'.dependencies]
+windows-capture = { git = "https://github.com/qzd1989/windows-capture" }
+
+
+[target.'cfg(target_os = "macos")'.dependencies]
+screencapturekit = "0.3.5"
+core-foundation = { version = "0.10" }
+core-media-rs = { version = "0.3" }
